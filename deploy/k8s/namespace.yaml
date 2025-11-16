@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ticketing
+  labels:
+    name: ticketing
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: namespace

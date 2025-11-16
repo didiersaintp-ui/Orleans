@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticketing-api
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: api
+spec:
+  replicas: 2  # Initial count, scaled by HPA
+  selector:
+    matchLabels:
+      app: ticketing-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Zero-downtime rolling update
+  template:
+    metadata:
+      labels:
+        app: ticketing-api
+        app.kubernetes.io/name: ticketing
+        app.kubernetes.io/component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5001"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ticketing-api
+      terminationGracePeriodSeconds: 30
+
+      # Anti-affinity: spread API pods across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - ticketing-api
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: api
+          image: ticketing-api:latest  # Replace with your registry
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: grpc
+              containerPort: 5000
+              protocol: TCP
+            - name: metrics
+              containerPort: 5001
+              protocol: TCP
+
+          env:
+            - name: ORLEANS_CLUSTER_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: ticketing-config
+                  key: ORLEANS_CLUSTER_ID
+            - name: ORLEANS_SERVICE_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: ticketing-config
+                  key: ORLEANS_SERVICE_ID
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: ticketing-config
+                  key: ASPNETCORE_ENVIRONMENT
+            - name: Jaeger__Endpoint
+              valueFrom:
+                configMapKeyRef:
+                  name: ticketing-config
+                  key: JAEGER_ENDPOINT
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+
+          resources:
+            requests:
+              cpu: 500m         # 0.5 vCPU
+              memory: 1Gi
+            limits:
+              cpu: 2000m        # 2 vCPU
+              memory: 2Gi
+
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 5001
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 5001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 10"]

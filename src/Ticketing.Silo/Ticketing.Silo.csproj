@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>12</LangVersion>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+
+    <!-- Performance optimizations -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <TieredCompilation>true</TieredCompilation>
+    <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Orleans Core -->
+    <PackageReference Include="Microsoft.Orleans.Server" Version="8.1.0" />
+    <PackageReference Include="Microsoft.Orleans.Clustering.Redis" Version="8.1.0" />
+    <PackageReference Include="Microsoft.Orleans.Persistence.Redis" Version="8.1.0" />
+    <PackageReference Include="Orleans.Persistence.Redis" Version="8.1.0" />
+
+    <!-- Orleans Kubernetes -->
+    <PackageReference Include="Microsoft.Orleans.Clustering.Kubernetes" Version="8.1.0" />
+
+    <!-- Logging -->
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="2.0.0" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="2.3.0" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
+
+    <!-- OpenTelemetry -->
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.7.0-rc.1" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.7.0" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.7.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.7.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.7.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.7.0" />
+
+    <!-- Health checks -->
+    <PackageReference Include="AspNetCore.HealthChecks.Redis" Version="7.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ticketing.Grains\Ticketing.Grains.csproj" />
+    <ProjectReference Include="..\Ticketing.Shared\Ticketing.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

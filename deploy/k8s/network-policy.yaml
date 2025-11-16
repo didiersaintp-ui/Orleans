@@ -1,0 +1,129 @@
+# ============================================================================
+# Network Policy for Orleans Silos
+# Restricts ingress/egress traffic for security (zero-trust)
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: orleans-silo-netpol
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: silo
+spec:
+  podSelector:
+    matchLabels:
+      app: orleans-silo
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from other silos (clustering)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: orleans-silo
+      ports:
+        - protocol: TCP
+          port: 11111  # Silo-to-silo
+        - protocol: TCP
+          port: 30000  # Gateway
+    # Allow from API (client connections)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: ticketing-api
+      ports:
+        - protocol: TCP
+          port: 30000  # Gateway
+    # Allow Prometheus scraping
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 5001  # Metrics
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow to other silos
+    - to:
+        - podSelector:
+            matchLabels:
+              app: orleans-silo
+      ports:
+        - protocol: TCP
+          port: 11111
+        - protocol: TCP
+          port: 30000
+    # Allow to Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Allow to Jaeger
+    - to:
+        - podSelector:
+            matchLabels:
+              app: jaeger
+      ports:
+        - protocol: TCP
+          port: 4317  # OTLP
+
+---
+# ============================================================================
+# Network Policy for API
+# ============================================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ticketing-api-netpol
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: api
+spec:
+  podSelector:
+    matchLabels:
+      app: ticketing-api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from anywhere (public API)
+    - {}
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow to Orleans silos
+    - to:
+        - podSelector:
+            matchLabels:
+              app: orleans-silo
+      ports:
+        - protocol: TCP
+          port: 30000  # Orleans gateway
+    # Allow to Jaeger
+    - to:
+        - podSelector:
+            matchLabels:
+              app: jaeger
+      ports:
+        - protocol: TCP
+          port: 4317  # OTLP

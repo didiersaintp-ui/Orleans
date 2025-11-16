@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- gRPC and Protobuf -->
+    <PackageReference Include="Google.Protobuf" Version="3.25.1" />
+    <PackageReference Include="Grpc.Tools" Version="2.60.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Grpc.Core.Api" Version="2.60.0" />
+
+    <!-- Orleans abstractions -->
+    <PackageReference Include="Microsoft.Orleans.Sdk" Version="8.1.0" />
+    <PackageReference Include="Microsoft.Orleans.Serialization.Abstractions" Version="8.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Protobuf files -->
+    <Protobuf Include="Protos\ticketing.proto" GrpcServices="Both" />
+  </ItemGroup>
+
+</Project>

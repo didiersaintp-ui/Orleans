@@ -1,0 +1,35 @@
+# ============================================================================
+# Pod Disruption Budget for Orleans Silos
+# Ensures minimum availability during voluntary disruptions (node drains, upgrades)
+# ============================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: orleans-silo-pdb
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: silo
+spec:
+  minAvailable: 2  # Always keep at least 2 silos running
+  selector:
+    matchLabels:
+      app: orleans-silo
+
+---
+# ============================================================================
+# Pod Disruption Budget for API
+# ============================================================================
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ticketing-api-pdb
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: api
+spec:
+  minAvailable: 1  # Always keep at least 1 API pod running
+  selector:
+    matchLabels:
+      app: ticketing-api

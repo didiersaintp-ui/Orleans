@@ -1,0 +1,95 @@
+# ============================================================================
+# RBAC for Orleans Silos
+# Required for Kubernetes membership provider (service discovery)
+# ============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ticketing-silo
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: silo
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ticketing-silo-role
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: silo
+rules:
+  # Orleans needs to list/watch pods for membership
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  # Orleans may need to read endpoints for service discovery
+  - apiGroups: [""]
+    resources: ["endpoints"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ticketing-silo-rolebinding
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: silo
+subjects:
+  - kind: ServiceAccount
+    name: ticketing-silo
+    namespace: ticketing
+roleRef:
+  kind: Role
+  name: ticketing-silo-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# ============================================================================
+# RBAC for API (minimal permissions)
+# ============================================================================
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ticketing-api
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: api
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ticketing-api-role
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: api
+rules:
+  # API may need to discover Orleans silos
+  - apiGroups: [""]
+    resources: ["pods", "endpoints"]
+    verbs: ["get", "list", "watch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ticketing-api-rolebinding
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: api
+subjects:
+  - kind: ServiceAccount
+    name: ticketing-api
+    namespace: ticketing
+roleRef:
+  kind: Role
+  name: ticketing-api-role
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12</LangVersion>
+    <!-- Optimisations pour production -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <TieredCompilation>true</TieredCompilation>
+    <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Orleans Core -->
+    <PackageReference Include="Microsoft.Orleans.Sdk" Version="8.1.0" />
+    <PackageReference Include="Microsoft.Orleans.Runtime" Version="8.1.0" />
+    <PackageReference Include="Microsoft.Orleans.Core.Abstractions" Version="8.1.0" />
+    <PackageReference Include="Microsoft.Orleans.Serialization" Version="8.1.0" />
+
+    <!-- Persistence providers -->
+    <PackageReference Include="Microsoft.Orleans.Persistence.Redis" Version="8.1.0" />
+    <PackageReference Include="Orleans.Persistence.Redis" Version="8.1.0" />
+
+    <!-- Logging -->
+    <PackageReference Include="Serilog" Version="3.1.1" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+
+    <!-- Utilities -->
+    <PackageReference Include="System.Text.Json" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ticketing.Shared\Ticketing.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ticketing-config
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: config
+data:
+  ORLEANS_CLUSTER_ID: "ticketing-cluster"
+  ORLEANS_SERVICE_ID: "ticketing-service"
+  ASPNETCORE_ENVIRONMENT: "Production"
+  JAEGER_ENDPOINT: "http://jaeger-collector:4317"
+  # Redis connection (pointing to Redis service in same namespace)
+  REDIS_CONNECTION: "redis-master.ticketing.svc.cluster.local:6379"

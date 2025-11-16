@@ -1,0 +1,138 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: orleans-silo
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: silo
+    app.kubernetes.io/part-of: orleans-cluster
+spec:
+  serviceName: orleans-headless
+  replicas: 3  # Initial count, scaled by HPA
+  selector:
+    matchLabels:
+      app: orleans-silo
+  podManagementPolicy: Parallel  # Faster startup
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+  template:
+    metadata:
+      labels:
+        app: orleans-silo
+        app.kubernetes.io/name: ticketing
+        app.kubernetes.io/component: silo
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5001"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: ticketing-silo
+      terminationGracePeriodSeconds: 120  # Allow grains to deactivate gracefully
+
+      # Anti-affinity: spread silos across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - orleans-silo
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: silo
+          image: ticketing-silo:latest  # Replace with your registry
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: orleans-silo
+              containerPort: 11111
+              protocol: TCP
+            - name: orleans-gateway
+              containerPort: 30000
+              protocol: TCP
+            - name: metrics
+              containerPort: 5001
+              protocol: TCP
+
+          env:
+            - name: ORLEANS_CLUSTER_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: ticketing-config
+                  key: ORLEANS_CLUSTER_ID
+            - name: ORLEANS_SERVICE_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: ticketing-config
+                  key: ORLEANS_SERVICE_ID
+            - name: ASPNETCORE_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: ticketing-config
+                  key: ASPNETCORE_ENVIRONMENT
+            - name: ConnectionStrings__Redis
+              valueFrom:
+                configMapKeyRef:
+                  name: ticketing-config
+                  key: REDIS_CONNECTION
+            - name: Jaeger__Endpoint
+              valueFrom:
+                configMapKeyRef:
+                  name: ticketing-config
+                  key: JAEGER_ENDPOINT
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+
+          resources:
+            requests:
+              cpu: 1000m        # 1 vCPU
+              memory: 2Gi
+            limits:
+              cpu: 2000m        # 2 vCPU
+              memory: 4Gi
+
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 5001
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 5001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          lifecycle:
+            preStop:
+              exec:
+                # Graceful shutdown: give Orleans time to deactivate grains
+                command: ["/bin/sh", "-c", "sleep 15"]
+
+      # Image pull secrets (if using private registry)
+      # imagePullSecrets:
+      #   - name: registry-credentials

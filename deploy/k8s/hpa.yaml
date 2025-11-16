@@ -1,0 +1,106 @@
+# ============================================================================
+# Horizontal Pod Autoscaler for Orleans Silos
+# ============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: orleans-silo-hpa
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: silo
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: orleans-silo
+  minReplicas: 3
+  maxReplicas: 50  # Adjust based on cluster capacity
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 min before scaling down
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60  # Max 1 pod removed per minute
+    scaleUp:
+      stabilizationWindowSeconds: 0  # Scale up immediately
+      policies:
+        - type: Percent
+          value: 50  # Scale up by 50% at a time
+          periodSeconds: 60
+        - type: Pods
+          value: 5  # Or add max 5 pods per minute
+          periodSeconds: 60
+      selectPolicy: Max
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70  # Target 70% CPU
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75  # Target 75% memory
+    # Custom metrics (requires metrics-server + custom metrics API)
+    # - type: Pods
+    #   pods:
+    #     metric:
+    #       name: ticketing_validation_duration_seconds_p99
+    #     target:
+    #       type: AverageValue
+    #       averageValue: "50m"  # 50ms p99 latency
+
+---
+# ============================================================================
+# Horizontal Pod Autoscaler for API
+# ============================================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ticketing-api-hpa
+  namespace: ticketing
+  labels:
+    app.kubernetes.io/name: ticketing
+    app.kubernetes.io/component: api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ticketing-api
+  minReplicas: 2
+  maxReplicas: 20
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 180  # Wait 3 min before scaling down
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100  # Double pod count
+          periodSeconds: 30
+        - type: Pods
+          value: 4
+          periodSeconds: 30
+      selectPolicy: Max
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
