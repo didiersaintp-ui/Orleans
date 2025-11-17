@@ -128,8 +128,8 @@ try
         // Grain versioning (pour rolling updates sans downtime)
         siloBuilder.Configure<GrainVersioningOptions>(options =>
         {
-            options.DefaultCompatibilityStrategy = nameof(BackwardCompatible);
-            options.DefaultVersionSelectorStrategy = nameof(LatestVersion);
+            options.DefaultCompatibilityStrategy = "BackwardCompatible";
+            options.DefaultVersionSelectorStrategy = "LatestVersion";
         });
 
         Log.Information("Orleans Silo configuration completed");
@@ -221,10 +221,3 @@ finally
 {
     Log.CloseAndFlush();
 }
-
-/// <summary>
-/// Placeholder classes for grain versioning strategies.
-/// Orleans will use built-in implementations.
-/// </summary>
-public class BackwardCompatible { }
-public class LatestVersion { }

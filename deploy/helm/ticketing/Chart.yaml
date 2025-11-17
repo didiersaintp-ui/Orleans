@@ -1,0 +1,17 @@
+apiVersion: v2
+name: ticketing
+description: Orleans-based account ticketing backend for high-scale validation
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - orleans
+  - ticketing
+  - grpc
+  - distributed-systems
+home: https://github.com/your-org/orleans-ticketing
+sources:
+  - https://github.com/your-org/orleans-ticketing
+maintainers:
+  - name: DevOps Team
+    email: devops@ticketing.example.com
